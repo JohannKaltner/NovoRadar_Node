@@ -5,7 +5,7 @@ const mysql = require("../mysql").pool;
 //Get Oficinas
 router.get("/", (req, res, next) => {
   const pagina = parseInt(req.query.page);
-  const limit = 10;
+  const limit = 20;
   const offset = (pagina - 1) * limit;
   mysql.getConnection((error, conn) => {
     if (error) {
@@ -21,6 +21,7 @@ router.get("/", (req, res, next) => {
           quantidade: result.length,
           oficinas: result.map((oficina) => {
             return {
+              id: oficina.id,
               nome: oficina.nome,
               company: oficina.company,
               cnpj: oficina.cnpj,
@@ -52,7 +53,7 @@ router.get("/", (req, res, next) => {
   });
 });
 
-router.get("/:CategoryId", (req, res, next) => {
+router.get("/PorCategoria/:CategoryId", (req, res, next) => {
   const pagina = parseInt(req.query.page);
   const limit = 10;
   const CategoryId = req.params.CategoryId;
@@ -108,8 +109,65 @@ router.get("/:CategoryId", (req, res, next) => {
   });
 });
 
+router.post("/PorNome", (req, res, next) => {
+  const pagina = parseInt(req.query.page);
+  const limit = 10;
+  const Nome = req.body.name;
+  const offset = (pagina - 1) * limit;
+  mysql.getConnection((error, conn) => {
+    if (error) {
+      return res.status(500).send({ error: error });
+    }
+    conn.query(
+      `SELECT * FROM oficinas WHERE nome LIKE ?  limit ${limit}  OFFSET  ${offset}`,
+      ["%" + Nome + "%"],
+      (error, result, fields) => {
+        if (error) {
+          return res.status(500).send({ error: error, response: null });
+        }
+        if (result.length == 0) {
+          return res
+            .status(404)
+            .send({ error: "Woopsie Doopsie, Nada Aqui :(" });
+        }
+        const response = {
+          quantidade: result.length,
+          detalhes: "Oficinas Por Nome Recuperadas com Sucesso",
+          oficinas: result.map((oficina) => {
+            return {
+              nome: oficina.nome,
+              company: oficina.company,
+              cnpj: oficina.cnpj,
+              rua: oficina.rua,
+              numero: oficina.numero,
+              bairro: oficina.bairro,
+              cidade: oficina.cidade,
+              estado: oficina.estado,
+              latitude: oficina.latitude,
+              longitude: oficina.longitude,
+              id_usuario: oficina.id_usuario,
+              criadoEm: oficina.criadoEm,
+              atualizadoEm: oficina.atualizadoEm,
+              cep: oficina.cep,
+              ddd: oficina.ddd,
+              telefone1: oficina.telefone1,
+              telefone2: oficina.telefone2,
+              request: {
+                tipo: "GET",
+                descricao: "Retorna os detalhes de uma Oficina p/ Nome",
+                url: "http://localhost:3000/oficinas/" + oficina.id,
+              },
+            };
+          }),
+        };
+        return res.status(200).send(response);
+      }
+    );
+  });
+});
+
 //Get Oficina Por Id
-router.get("/:id", (req, res, next) => {
+router.get("/PorId/:id", (req, res, next) => {
   const Id = req.params.id;
   mysql.getConnection((error, conn) => {
     if (error) {

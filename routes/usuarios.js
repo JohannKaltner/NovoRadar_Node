@@ -153,31 +153,32 @@ router.post("/login", (req, res, next) => {
           return res.status(401).send({ mensagem: "Falha na autenticação" });
         }
         if (result) {
-          const expiresIn = 24 * 60 * 60;
-          const token = jwt.sign(
-            {
-              id: results[0].id,
-              email: results[0].email,
-              nome: results[0].nome,
-              cidade: results[0].cidade,
-              rua: results[0].rua,
-              numero: results[0].numero,
-              estado: results[0].estado,
-              lat: results[0].lat,
-              long: results[0].long,
-            },
-            process.env.ACCESS_TOKEN_SECRET,
-            {
-              expiresIn: expiresIn,
-            }
-          );
+          // const expiresIn = 24 * 60 * 60;
+          // const token = jwt.sign(
+          //   {
+          //     id: results[0].id,
+          //     email: results[0].email,
+          //     primeiro_nome: results[0].primeiro_nome,
+          //     segundo_nome: results[0].segundo_nome,
+          //     cidade: results[0].cidade,
+          //     rua: results[0].rua,
+          //     numero: results[0].numero,
+          //     estado: results[0].estado,
+          //     lat: results[0].lat,
+          //     long: results[0].long,
+          //   },
+          //   process.env.ACCESS_TOKEN_SECRET,
+          //   {
+          //     expiresIn: expiresIn,
+          //   }
+          // );
           return res.status(200).send({
             mensagem: "Autenticado com sucesso",
-            token: token,
             usuario: {
               id: results[0].id,
               email: results[0].email,
-              nome: results[0].nome,
+              primeiro_nome: results[0].primeiro_nome,
+              ultimo_nome: results[0].ultimo_nome,
               cidade: results[0].cidade,
               rua: results[0].rua,
               numero: results[0].numero,
@@ -186,6 +187,10 @@ router.post("/login", (req, res, next) => {
               long: results[0].long,
             },
           });
+        } else {
+          return res
+            .status(401)
+            .send({ mensagem: "Falha na autenticação, Senha Incorreta" });
         }
         return res.status(401).send({ mensagem: "Falha na autenticação" });
       });
