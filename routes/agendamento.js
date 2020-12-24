@@ -2,21 +2,26 @@ const express = require("express");
 const router = express.Router();
 const mysql = require("../mysql").pool;
 
-//Get Oficinas
-router.get("/", (req, res, next) => {
-  const pagina = parseInt(req.query.page);
-  const limit = 10;
-  const offset = (pagina - 1) * limit;
+//Get Agendamentos
+router.post("/SearchAgendamento/", (req, res, next) => {
+  // const pagina = parseInt(req.query.page);
+  // const limit = 10;
+  // const offset = (pagina - 1) * limit;
+  const id = parseInt(req.body.id);
+  const situacao = parseInt(req.body.situacao);
   mysql.getConnection((error, conn) => {
     if (error) {
       return res.status(500).send({ error: error });
     }
     conn.query(
-      `SELECT * FROM agendamento limit ${limit}  OFFSET  ${offset}`,
+      `SELECT * FROM agendamento where id_oficina = ? AND situacao = ?`,
+      //  limit ${limit}  OFFSET  ${offset}
+      [id, situacao],
       (error, result, fields) => {
         if (error) {
           return res.status(500).send({ error: error, response: null });
         }
+
         const response = {
           quantidade: result.length,
           agendamento: result.map((agendamento) => {
@@ -31,6 +36,20 @@ router.get("/", (req, res, next) => {
               id_veiculo: agendamento.id_veiculo,
               preco: agendamento.preco,
               prazo: agendamento.prazo,
+              usuario: {
+                id_usuario: agendamento.id_usuario,
+                primeiro_nome_usuario: agendamento.primeiro_nome_usuario,
+                rua_usuario: agendamento.rua_usuario,
+                bairro_usuario: agendamento.bairro_usuario,
+                numero_usuario: agendamento.numero_usuario,
+                telefone_usuario: agendamento.telefone_usuario,
+              },
+              veiculo: {
+                modelo_veiculo: agendamento.modelo_veiculo,
+                marca_veiculo: agendamento.marca_veiculo,
+                ano_veiculo: agendamento.ano_veiculo,
+                tipo_combustivel: agendamento.tipo_combustivel,
+              },
               request: {
                 tipo: "GET",
                 descricao: "Retorna os detalhes do Agendamento",
@@ -39,23 +58,21 @@ router.get("/", (req, res, next) => {
             };
           }),
         };
+        conn.release();
         return res.status(200).send(response);
       }
     );
   });
 });
 
-router.get("/:AgendamentoId", (req, res, next) => {
-  const pagina = parseInt(req.query.page);
-  const limit = 10;
+router.get("/PorId/:AgendamentoId", (req, res, next) => {
   const AgendamentoId = req.params.AgendamentoId;
-  const offset = (pagina - 1) * limit;
   mysql.getConnection((error, conn) => {
     if (error) {
       return res.status(500).send({ error: error });
     }
     conn.query(
-      `SELECT * FROM oficinas WHERE id = ${AgendamentoId} limit ${limit}  OFFSET  ${offset}`,
+      `SELECT * FROM agendamento WHERE id = ${AgendamentoId}`,
       (error, result, fields) => {
         if (error) {
           return res.status(500).send({ error: error, response: null });
@@ -80,6 +97,20 @@ router.get("/:AgendamentoId", (req, res, next) => {
               id_veiculo: agendamento.id_veiculo,
               preco: agendamento.preco,
               prazo: agendamento.prazo,
+              usuario: {
+                id_usuario: agendamento.id_usuario,
+                primeiro_nome_usuario: agendamento.primeiro_nome_usuario,
+                rua_usuario: agendamento.rua_usuario,
+                bairro_usuario: agendamento.bairro_usuario,
+                numero_usuario: agendamento.numero_usuario,
+                telefone_usuario: agendamento.telefone_usuario,
+              },
+              veiculo: {
+                modelo_veiculo: agendamento.modelo_veiculo,
+                marca_veiculo: agendamento.marca_veiculo,
+                ano_veiculo: agendamento.ano_veiculo,
+                tipo_combustivel: agendamento.tipo_combustivel,
+              },
               request: {
                 tipo: "GET",
                 descricao: "Retorna os detalhes de um agendamento",
@@ -94,7 +125,7 @@ router.get("/:AgendamentoId", (req, res, next) => {
   });
 });
 
-//Post Oficina
+//Post Agendamento
 router.post("/", (req, res, next) => {
   mysql.getConnection((error, conn) => {
     if (error) {
@@ -116,7 +147,7 @@ router.post("/", (req, res, next) => {
       (error, resultado, field) => {
         const response = {
           detalhes: "Agendado com Sucesso",
-          OficinaCadastrada: {
+          AgendamentoIniciado: {
             id_oficina: resultado.id_oficina,
             id_usuario: req.body.id_usuario,
             situacao: req.body.situacao,
@@ -129,7 +160,7 @@ router.post("/", (req, res, next) => {
             request: {
               tipo: "POST",
               descricao: "Cria um Agendamento",
-              url: "http://localhost:3000/agendamento/",
+              //url: "http://localhost:3000/agendamento/",
             },
           },
         };
@@ -144,28 +175,18 @@ router.post("/", (req, res, next) => {
 });
 
 //Patch Oficina
-router.patch("/", (req, res, next) => {
+router.patch("/AlteraStatus", (req, res, next) => {
   mysql.getConnection((error, conn) => {
     conn.query(
-      "UPDATE oficinas SET id_oficina = ? , id_usuario = ? , situacao = ? , criadoEm = ?, atualizadoEm = ? , obs = ? , id_veiculo = ? , preco = ?, prazo = ?",
-      [
-        req.body.id_oficina,
-        req.body.id_usuario,
-        req.body.situacao,
-        req.body.criadoEm,
-        req.body.atualizadoEm,
-        req.body.obs,
-        req.body.id_veiculo,
-        req.body.preco,
-        req.body.prazo,
-      ],
+      "UPDATE oficinas SET situacao = ? WHERE id = ?",
+      [req.body.situacao, req.body.id],
       (error, result, field) => {
         conn.release();
         if (error) {
           return res.status(500).send({ error: error });
         }
         res.status(202).send({
-          detalhes: "Agendamento atualizado com Sucesso !",
+          detalhes: "Agendamento Atualizado com Sucesso !",
         });
       }
     );
@@ -186,6 +207,7 @@ router.patch("/", (req, res, next) => {
         if (error) {
           return res.status(500).send({ error: error });
         }
+        conn.release();
         return res.status(202).send({
           detalhes: "Serviço cancelado com sucesso",
         });

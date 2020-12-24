@@ -47,6 +47,8 @@ router.get("/", (req, res, next) => {
             };
           }),
         };
+        conn.release();
+
         return res.status(200).send(response);
       }
     );
@@ -103,6 +105,8 @@ router.get("/PorCategoria/:CategoryId", (req, res, next) => {
             };
           }),
         };
+        conn.release();
+
         return res.status(200).send(response);
       }
     );
@@ -160,6 +164,8 @@ router.post("/PorNome", (req, res, next) => {
             };
           }),
         };
+        conn.release();
+
         return res.status(200).send(response);
       }
     );
@@ -213,6 +219,63 @@ router.get("/PorId/:id", (req, res, next) => {
             },
           },
         };
+        conn.release();
+
+        return res.status(200).send(response);
+      }
+    );
+  });
+});
+
+//Get Oficina Por Id de Usuario
+router.get("/PorIdUsuario/:id_usuario", (req, res, next) => {
+  const Id = req.params.id_usuario;
+  mysql.getConnection((error, conn) => {
+    if (error) {
+      return res.status(500).send({ error: error });
+    }
+    conn.query(
+      `SELECT * FROM oficinas WHERE id_usuario = ${Id};`,
+      (error, result, fields) => {
+        if (error) {
+          return res.status(500).send({ error: error, response: null });
+        }
+
+        if (result.length == 0) {
+          return res
+            .status(404)
+            .send({ error: "Woopsie Doopsie, Nada Aqui :(" });
+        }
+        const response = {
+          detalhes: "Oficina Recuperada com Sucesso",
+          Oficina: {
+            id: result[0].id,
+            nome: result[0].nome,
+            company: result[0].company,
+            cnpj: result[0].cnpj,
+            rua: result[0].rua,
+            numero: result[0].numero,
+            bairro: result[0].bairro,
+            cidade: result[0].cidade,
+            estado: result[0].estado,
+            latitude: result[0].latitude,
+            longitude: result[0].longitude,
+            id_usuario: result[0].id_usuario,
+            criadoEm: result[0].criadoEm,
+            atualizadoEm: result[0].atualizadoEm,
+            cep: result[0].cep,
+            ddd: result[0].ddd,
+            telefone1: result[0].telefone1,
+            telefone2: result[0].telefone2,
+            request: {
+              tipo: "GET",
+              descricao: "Retorna todas as Oficina",
+              url: "http://localhost:3000/oficinas/",
+            },
+          },
+        };
+        conn.release();
+
         return res.status(200).send(response);
       }
     );

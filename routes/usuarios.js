@@ -74,6 +74,51 @@ const mysql = require("../mysql").pool;
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 
+//Get Usuarios
+router.get("/GetUsuario/:id", (req, res, next) => {
+  const pagina = parseInt(req.query.page);
+  const limit = 20;
+  const offset = (pagina - 1) * limit;
+  const id = req.params.id;
+  mysql.getConnection((error, conn) => {
+    if (error) {
+      return res.status(500).send({ error: error });
+    }
+    conn.query(
+      `SELECT * FROM users where id = ${id} limit ${limit}  OFFSET  ${offset}`,
+      (error, result, fields) => {
+        if (error) {
+          return res.status(500).send({ error: error, response: null });
+        }
+        const response = {
+          quantidade: result.length,
+          oficinas: result.map((oficina) => {
+            return {
+              primeiro_nome: oficina.primeiro_nome,
+              ultimo_nome: oficina.ultimo_nome,
+              email: oficina.email,
+              rua: oficina.rua,
+              numero: oficina.numero,
+              bairro: oficina.bairro,
+              cidade: oficina.cidade,
+              estado: oficina.estado,
+              latitude: oficina.latitude,
+              longitude: oficina.longitude,
+              request: {
+                tipo: "GET",
+                descricao: "Retorna os detalhes de um usuario",
+              },
+            };
+          }),
+        };
+        conn.release();
+
+        return res.status(200).send(response);
+      }
+    );
+  });
+});
+
 router.post("/cadastro", (req, res, next) => {
   mysql.getConnection((err, conn) => {
     if (err) {
@@ -146,11 +191,11 @@ router.post("/login", (req, res, next) => {
         return res.status(500).send({ error: error });
       }
       if (results.length < 1) {
-        return res.status(401).send({ mensagem: "Falha na autenticação" });
+        return res.status(401).send({ mensagem: "Falha na autenticação2222" });
       }
       bcrypt.compare(req.body.senha, results[0].senha, (err, result) => {
         if (err) {
-          return res.status(401).send({ mensagem: "Falha na autenticação" });
+          return res.status(401).send({ mensagem: "Falha na autenticação333" });
         }
         if (result) {
           // const expiresIn = 24 * 60 * 60;
@@ -190,9 +235,9 @@ router.post("/login", (req, res, next) => {
         } else {
           return res
             .status(401)
-            .send({ mensagem: "Falha na autenticação, Senha Incorreta" });
+            .send({ mensagem: "Falha na autenticação aqui, Senha Incorreta" });
         }
-        return res.status(401).send({ mensagem: "Falha na autenticação" });
+        return res.status(401).send({ mensagem: "Falha na autenticação 111" });
       });
     });
   });
