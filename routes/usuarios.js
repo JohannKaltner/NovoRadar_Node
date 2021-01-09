@@ -230,6 +230,7 @@ router.post("/login", (req, res, next) => {
               estado: results[0].estado,
               lat: results[0].lat,
               long: results[0].long,
+              hasOficina: results[0].hasOficina,
             },
           });
         } else {

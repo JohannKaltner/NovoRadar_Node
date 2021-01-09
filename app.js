@@ -6,7 +6,8 @@ const RotaUsuario = require("./routes/usuarios");
 const RotaOficinas = require("./routes/oficinas");
 const RotaAgendamentos = require("./routes/agendamento");
 
-//Morgan para Logs
+
+ //Morgan para Logs
 app.use(morgan("dev"));
 
 //Encoded false para BodyParser
@@ -29,6 +30,7 @@ app.use(bodyParser.json());
 //   }
 //   next();
 // });
+
 app.use(function (req, res, next) {
   // Website you wish to allow to connect
   res.setHeader("Access-Control-Allow-Origin", "*");

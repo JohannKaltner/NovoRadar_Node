@@ -3,22 +3,25 @@ const router = express.Router();
 const mysql = require("../mysql").pool;
 
 //Get Oficinas
+
 router.get("/", (req, res, next) => {
   const pagina = parseInt(req.query.page);
-  const limit = 20;
+  const limit = 5;
   const offset = (pagina - 1) * limit;
+
   mysql.getConnection((error, conn) => {
     if (error) {
       return res.status(500).send({ error: error });
     }
-    conn.query(
-      `SELECT * FROM oficinas limit ${limit}  OFFSET  ${offset}`,
-      (error, result, fields) => {
+    conn.query(`SELECT * FROM oficinas limit ${limit}  OFFSET  ${offset};`,
+    (error, result, fields) => {
         if (error) {
-          return res.status(500).send({ error: error, response: null });
+           return res.status(500).send({ error: error, response: null });
         }
-        const response = {
-          quantidade: result.length,
+        console.log(result)
+        conn.release(); 
+        const response = { 
+          // quantidade: result[0].Length,     
           oficinas: result.map((oficina) => {
             return {
               id: oficina.id,
@@ -47,11 +50,9 @@ router.get("/", (req, res, next) => {
             };
           }),
         };
-        conn.release();
-
         return res.status(200).send(response);
       }
-    );
+      );
   });
 });
 
@@ -106,25 +107,43 @@ router.get("/PorCategoria/:CategoryId", (req, res, next) => {
           }),
         };
         conn.release();
-
         return res.status(200).send(response);
+
       }
-    );
+      );
   });
 });
 
-router.post("/PorNome", (req, res, next) => {
-  const pagina = parseInt(req.query.page);
-  const limit = 10;
-  const Nome = req.body.name;
-  const offset = (pagina - 1) * limit;
+router.post("/PorFiltroAvancado", (req, res, next) => {
+  const {
+    nome, 
+    rua,
+    numero,
+    bairro,
+    cidade,
+    estado, 
+    cep, 
+  } = req.body;
+  // const { limit, pagina } = req.query  
+  // const offset = (parseInt(pagina) - 1) * limit;
+   
+  const percent = '%'
   mysql.getConnection((error, conn) => {
     if (error) {
       return res.status(500).send({ error: error });
     }
     conn.query(
-      `SELECT * FROM oficinas WHERE nome LIKE ?  limit ${limit}  OFFSET  ${offset}`,
-      ["%" + Nome + "%"],
+      `SELECT * FROM oficinas WHERE nome LIKE "${percent + nome}"` +
+         ` AND rua LIKE "${percent + rua}" ` +
+         ` AND numero LIKE "${percent + numero}"` +
+         ` AND bairro LIKE "${percent + bairro}"` +
+         ` AND cidade LIKE "${percent + cidade}"` +
+         ` AND estado LIKE "${percent + estado}"` +
+         ` AND cep LIKE "${percent + cep}"`
+         
+         ,
+      // limit 
+      [],
       (error, result, fields) => {
         if (error) {
           return res.status(500).send({ error: error, response: null });
@@ -132,7 +151,7 @@ router.post("/PorNome", (req, res, next) => {
         if (result.length == 0) {
           return res
             .status(404)
-            .send({ error: "Woopsie Doopsie, Nada Aqui :(" });
+            .send({ error: "Woopsie Doopsie, Sem Resultados :(" });
         }
         const response = {
           quantidade: result.length,

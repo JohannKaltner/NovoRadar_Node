@@ -3,6 +3,63 @@ const router = express.Router();
 const mysql = require("../mysql").pool;
 
 //Get Agendamentos
+router.get("/GetActiveAgendamentos/", (req, res, next) => {
+  mysql.getConnection((error, conn) => {
+    if (error) {
+      return res.status(500).send({ error: error });
+    }
+    conn.query(
+      `SELECT * FROM agendamento where situacao < 4`,
+      //  limit ${limit}  OFFSET  ${offset}
+      [id, situacao],
+      (error, result, fields) => {
+        if (error) {
+          return res.status(500).send({ error: error, response: null });
+        }
+
+        const response = {
+          quantidade: result.length,
+          agendamento: result.map((agendamento) => {
+            return {
+              id: agendamento.id,
+              id_oficina: agendamento.id_oficina,
+              id_usuario: agendamento.id_usuario,
+              situacao: agendamento.situacao,
+              criadoEm: agendamento.criadoEm,
+              atualizadoEm: agendamento.atualizadoEm,
+              obs: agendamento.obs,
+              id_veiculo: agendamento.id_veiculo,
+              preco: agendamento.preco,
+              prazo: agendamento.prazo,
+              usuario: {
+                id_usuario: agendamento.id_usuario,
+                primeiro_nome_usuario: agendamento.primeiro_nome_usuario,
+                rua_usuario: agendamento.rua_usuario,
+                bairro_usuario: agendamento.bairro_usuario,
+                numero_usuario: agendamento.numero_usuario,
+                telefone_usuario: agendamento.telefone_usuario,
+              },
+              veiculo: {
+                modelo_veiculo: agendamento.modelo_veiculo,
+                marca_veiculo: agendamento.marca_veiculo,
+                ano_veiculo: agendamento.ano_veiculo,
+                tipo_combustivel: agendamento.tipo_combustivel,
+              },
+              request: {
+                tipo: "GET",
+                descricao: "Retorna os detalhes do Agendamento",
+                url: "http://localhost:3000/agendamento/" + agendamento.id,
+              },
+            };
+          }),
+        };
+        conn.release();
+        return res.status(200).send(response);
+      }
+    );
+  });
+});
+
 router.post("/SearchAgendamento/", (req, res, next) => {
   // const pagina = parseInt(req.query.page);
   // const limit = 10;
@@ -176,18 +233,91 @@ router.post("/", (req, res, next) => {
 
 //Patch Oficina
 router.patch("/AlteraStatus", (req, res, next) => {
+  const id = req.body.id;
+  const situacao = req.body.situacao;
   mysql.getConnection((error, conn) => {
     conn.query(
-      "UPDATE oficinas SET situacao = ? WHERE id = ?",
-      [req.body.situacao, req.body.id],
+      "UPDATE agendamento SET situacao = ? WHERE id = ?",
+      [situacao, id],
       (error, result, field) => {
-        conn.release();
-        if (error) {
-          return res.status(500).send({ error: error });
-        }
-        res.status(202).send({
-          detalhes: "Agendamento Atualizado com Sucesso !",
-        });
+        conn.query(
+          "SELECT * FROM agendamento where id = ? ",
+          [id],
+          (error, result, field) => {
+            console.log("result do select", result[0]);
+            conn.query(
+              "INSERT INTO agendamento_historico (id_agendamento_historico, id_oficina, id_usuario, situacao, criadoEm, atualizadoEm, obs, id_veiculo, preco, prazo, primeiro_nome_usuario, rua_usuario, bairro_usuario, numero_usuario, telefone_usuario, modelo_veiculo, marca_veiculo, ano_veiculo, tipo_combustivel) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+              [
+                req.body.id,
+                result[0].id_oficina,
+                result[0].id_usuario,
+                situacao,
+                result[0].criadoEm,
+                result[0].atualizadoEm,
+                result[0].obs,
+                result[0].id_veiculo,
+                result[0].preco,
+                result[0].prazo,
+                result[0].primeiro_nome_usuario,
+                result[0].rua_usuario,
+                result[0].bairro_usuario,
+                result[0].numero_usuario,
+                result[0].telefone_usuario,
+                result[0].modelo_veiculo,
+                result[0].marca_veiculo,
+                result[0].ano_veiculo,
+                result[0].tipo_combustivel,
+              ],
+              (error, result, field) => {
+                if (error) {
+                  console.log(error);
+                }
+                console.log("result do historico", result);
+              }
+            );
+            conn.release();
+            if (error) {
+              return res.status(500).send({ error: error });
+            }
+            const response = {
+              detalhes: "Agendamento recuperado com sucesso",
+              agendamentos: result.map((agendamento) => {
+                return {
+                  id: agendamento.id,
+                  id_oficina: agendamento.id_oficina,
+                  id_usuario: agendamento.id_usuario,
+                  situacao: agendamento.situacao,
+                  criadoEm: agendamento.criadoEm,
+                  atualizadoEm: agendamento.atualizadoEm,
+                  obs: agendamento.obs,
+                  id_veiculo: agendamento.id_veiculo,
+                  preco: agendamento.preco,
+                  prazo: agendamento.prazo,
+                  usuario: {
+                    id_usuario: agendamento.id_usuario,
+                    primeiro_nome_usuario: agendamento.primeiro_nome_usuario,
+                    rua_usuario: agendamento.rua_usuario,
+                    bairro_usuario: agendamento.bairro_usuario,
+                    numero_usuario: agendamento.numero_usuario,
+                    telefone_usuario: agendamento.telefone_usuario,
+                  },
+                  veiculo: {
+                    modelo_veiculo: agendamento.modelo_veiculo,
+                    marca_veiculo: agendamento.marca_veiculo,
+                    ano_veiculo: agendamento.ano_veiculo,
+                    tipo_combustivel: agendamento.tipo_combustivel,
+                  },
+                  request: {
+                    tipo: "GET",
+                    descricao: "Retorna os detalhes de um agendamento",
+                    url: "http://localhost:3000/agendamento/" + agendamento.id,
+                  },
+                };
+              }),
+            };
+            res.status(202).send(response);
+          }
+        );
       }
     );
   });
